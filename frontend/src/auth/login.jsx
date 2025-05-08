@@ -1,23 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState } from "react";
 import { Container, Row, Col, Form, Button, Alert } from "react-bootstrap";
 
-const Login = ({ setIsAuthenticated }) => {
-    const [email, setEmail] = useState("");
+const Login = () => {
+    const [email, setEmail] = useState(""); // ✅ use email instead of username
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        // If already logged in, redirect to main dashboard
-        const session = localStorage.getItem("session_data");
-        if (session) {
-            const { expires_at } = JSON.parse(session);
-            if (new Date(expires_at) > new Date()) {
-                navigate("/");
-            }
-        }
-    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -25,34 +12,33 @@ const Login = ({ setIsAuthenticated }) => {
             setError("Please fill in all fields");
             return;
         }
+        setError("");
 
         try {
-            const response = await fetch("https://my-fastapi-app-3389.azurewebsites.net/api/auth/login", {
+            const response = await fetch("http://127.0.0.1:8000/auth/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password }), // ✅ send email instead of username
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const data = await response.json();
                 throw new Error(data.detail || "Login failed");
             }
 
-            const data = await response.json();
-            const expirationTime = new Date();
-            expirationTime.setDate(expirationTime.getDate() + 30); // 30 days from now
+            console.log("Login successful:", data);
 
-            const sessionData = {
-                access_token: data.access_token,
-                expires_at: expirationTime.toISOString(),
-            };
-            localStorage.setItem("session_data", JSON.stringify(sessionData));
+            // Save token
+            sessionStorage.setItem("access_token", data.access_token);
+            sessionStorage.setItem("user", JSON.stringify(data.user));
 
-            setIsAuthenticated(true);
-            navigate("/"); // Redirect to dashboard
+            alert("Login successful!");
+
         } catch (err) {
+            console.error(err);
             setError(err.message);
         }
     };
@@ -88,11 +74,6 @@ const Login = ({ setIsAuthenticated }) => {
                             Login
                         </Button>
                     </Form>
-
-                    <div className="text-center mt-3">
-                        <span>Don't have an account? </span>
-                        <Link to="/register">Register here</Link>
-                    </div>
                 </Col>
             </Row>
         </Container>

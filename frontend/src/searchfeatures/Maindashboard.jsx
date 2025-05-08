@@ -1,72 +1,68 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Container, Row, Col, Form, Button, Card, ListGroup } from "react-bootstrap";
 
 const Maindashboard = () => {
     const [images, setImages] = useState([]);
     const [searchQuery, setSearchQuery] = useState("");
-    const [keyword, setKeyword] = useState("test");
-    const [chatHistory, setChatHistory] = useState([]);
-    const navigate = useNavigate();
+    const [keyword, setKeyword] = useState("test"); // Default keyword
+    const [chatHistory, setChatHistory] = useState([]); // Chat history state
 
-    // Logout logic
-    const handleLogout = () => {
-        sessionStorage.removeItem("access_token");
-        navigate("/login");
-    };
-
-    // Fetch images from Openverse
+    // Fetch images from Openverse API
     const fetchImages = async (query) => {
         try {
             const response = await fetch(`https://api.openverse.org/v1/images/?q=${query}`, {
                 headers: {
-                    Authorization: "Bearer <Openverse API token>", // Replace with your real token
+                    Authorization: "Bearer <Openverse API token>", // Replace <Openverse API token> with your actual token
                 },
             });
             const data = await response.json();
-            const validImages = data.results.filter((image) => image.url);
-            setImages(validImages.slice(0, 20));
+            const validImages = data.results.filter((image) => image.url); // Filter out invalid URLs
+            console.log("Fetched images:", validImages);
+            setImages(validImages.slice(0, 20)); // Get the first 20 valid images
         } catch (error) {
             console.error("Error fetching images:", error);
         }
     };
 
-    // Fetch chat history
+    // Fetch chat history from the backend
     const fetchHistory = async () => {
-        const token = sessionStorage.getItem("access_token");
-        if (!token) {
-            navigate("/login");
-            return;
-        }
-
         try {
-            const response = await fetch("https://my-fastapi-app-3389.azurewebsites.net/api/history", {
+            const token = sessionStorage.getItem("access_token"); // Retrieve token from sessionStorage
+            if (!token) {
+                throw new Error("No access token found. Please log in again.");
+            }
+
+            const response = await fetch("http://127.0.0.1:8000/history", {
+                method: "GET",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
                 },
             });
 
-            if (!response.ok) throw new Error("Failed to fetch history");
+            if (!response.ok) {
+                throw new Error("Failed to fetch history");
+            }
 
             const data = await response.json();
             setChatHistory(data.history.map((entry) => ({ id: entry.id, text: entry.text })));
         } catch (error) {
             console.error("Error fetching history:", error);
-            alert(error.message);
+            alert(error.message); // Show an alert to the user
         }
     };
 
-    // Post a new search to backend
+    // Post a new search query to the backend
     const postHistory = async (query) => {
-        const token = sessionStorage.getItem("access_token");
-        if (!token) {
-            navigate("/login");
-            return;
-        }
-
         try {
-            const response = await fetch("https://my-fastapi-app-3389.azurewebsites.net/api/history", {
+            const token = sessionStorage.getItem("access_token"); // Retrieve token from sessionStorage
+            if (!token) {
+                alert("Session expired. Redirecting to login.");
+                window.location.href = "/login"; // Replace with your login route
+                return;
+            }
+
+            const response = await fetch("http://127.0.0.1:8000/history", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -75,25 +71,29 @@ const Maindashboard = () => {
                 body: JSON.stringify({ text: query }),
             });
 
-            if (!response.ok) throw new Error("Failed to save history");
+            if (!response.ok) {
+                throw new Error("Failed to save history");
+            }
 
+            // Refresh the history after posting
             fetchHistory();
         } catch (error) {
             console.error("Error saving history:", error);
-            alert(error.message);
+            alert(error.message); // Show an alert to the user
         }
     };
 
     // Delete a specific history entry
     const deleteHistory = async (id) => {
-        const token = sessionStorage.getItem("access_token");
-        if (!token) {
-            navigate("/login");
-            return;
-        }
-
         try {
-            const response = await fetch(`https://my-fastapi-app-3389.azurewebsites.net/api/history/${id}`, {
+            const token = sessionStorage.getItem("access_token"); // Retrieve token from sessionStorage
+            if (!token) {
+                alert("Session expired. Redirecting to login.");
+                window.location.href = "/login"; // Replace with your login route
+                return;
+            }
+
+            const response = await fetch(`http://127.0.0.1:8000/history/${id}`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
@@ -101,35 +101,39 @@ const Maindashboard = () => {
                 },
             });
 
-            if (!response.ok) throw new Error("Failed to delete history");
+            if (!response.ok) {
+                throw new Error("Failed to delete history");
+            }
 
+            // Refresh the history after deletion
             fetchHistory();
         } catch (error) {
             console.error("Error deleting history:", error);
-            alert(error.message);
+            alert(error.message); // Show an alert to the user
         }
     };
 
-    // Handle search
+    // Handle search button click
     const handleSearch = () => {
         if (searchQuery.trim() === "") return;
+
+        // Update the keyword and fetch images
         setKeyword(searchQuery);
         fetchImages(searchQuery);
+
+        // Post the search query to the backend
         postHistory(searchQuery);
+
+        // Clear the search input
         setSearchQuery("");
     };
 
-    // On mount, check for token and fetch history
+    // Fetch history on component mount
     useEffect(() => {
-        const token = sessionStorage.getItem("access_token");
-        if (!token) {
-            navigate("/login");
-        } else {
-            fetchHistory();
-        }
-    }, [navigate]);
+        fetchHistory();
+    }, []);
 
-    // On keyword change, fetch images
+    // Fetch images whenever the keyword changes
     useEffect(() => {
         fetchImages(keyword);
     }, [keyword]);
@@ -158,14 +162,8 @@ const Maindashboard = () => {
 
                 {/* Main Content */}
                 <Col xs={12} md={9}>
-                    <div className="d-flex justify-content-between align-items-center mt-3">
-                        <h1>Image Gallery</h1>
-                        <Button variant="outline-danger" onClick={handleLogout}>
-                            Logout
-                        </Button>
-                    </div>
-
-                    <Row className="mb-4 mt-3">
+                    <h1 className="text-center my-4">Image Gallery</h1>
+                    <Row className="mb-4">
                         <Col xs={12} md={8} className="mb-2">
                             <Form.Control
                                 type="text"
