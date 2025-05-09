@@ -31,18 +31,23 @@ jobs:
     # 4. Build and push frontend image to ACR
     - name: Build and push frontend image
       run: |
+        echo "Building frontend image"
         docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/frontend:latest ./frontend
+        echo "Pushing frontend image"
         docker push ${{ secrets.ACR_NAME }}.azurecr.io/frontend:latest  # Push the image to ACR
 
     # 5. Build and push backend image to ACR
     - name: Build and push backend image
       run: |
+        echo "Building backend image"
         docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/backend:latest ./backend
+        echo "Pushing backend image"
         docker push ${{ secrets.ACR_NAME }}.azurecr.io/backend:latest  # Push the image to ACR
 
     # 6. Deploy the containers using Docker Compose to Azure App Service
     - name: Deploy to Azure App Service with Docker Compose
       run: |
+        echo "Deploying to Azure App Service"
         az webapp config container set \
           --name ${{ secrets.APP_NAME }} \
           --resource-group ${{ secrets.RESOURCE_GROUP }} \
