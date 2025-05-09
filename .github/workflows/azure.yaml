@@ -48,6 +48,7 @@ jobs:
     - name: Deploy to Azure App Service with Docker Compose
       run: |
         echo "Deploying to Azure App Service"
+        set -x  # This will show every command that gets executed
         az webapp config container set \
           --name ${{ secrets.APP_NAME }} \
           --resource-group ${{ secrets.RESOURCE_GROUP }} \
@@ -56,3 +57,4 @@ jobs:
           --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io \
           --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
           --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}  # Use the registry credentials from secrets
+        set +x  # Turn off debug output after the command is run
