@@ -1,46 +1,53 @@
-name: Build and Deploy to Azure
+name: Azure Deployment
 
 on:
   push:
-    branches: [ main ]  # Trigger on push to main branch (adjust as needed)
+    branches:
+      - main  # Trigger the action on push to the main branch
 
 jobs:
-  build-deploy:
-    runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest  # Use the latest Ubuntu environment
+
     steps:
-      # 1. Check out the code
-      - uses: actions/checkout@v3
+    # 1. Checkout code from the repository
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      # 2. Log in to Azure using service principal credentials
-      - uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+    # 2. Log in to Azure using Service Principal credentials
+    - name: Login to Azure with Service Principal
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}  # Ensure AZURE_CREDENTIALS is set correctly
 
-      # 3. Log in to Azure Container Registry (ACR)
-      - uses: docker/login-action@v2
-        with:
-          registry: ${{ secrets.ACR_NAME }}.azurecr.io
-          username: ${{ secrets.ACR_USERNAME }}
-          password: ${{ secrets.ACR_PASSWORD }}
+    # 3. Log in to Azure Container Registry (ACR) for Docker image push
+    - name: Log in to Azure Container Registry (ACR)
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.ACR_NAME }}.azurecr.io  # Use your ACR name from secrets
+        username: ${{ secrets.ACR_USERNAME }}  # ACR username from secrets
+        password: ${{ secrets.ACR_PASSWORD }}  # ACR password from secrets
 
-      # 4. Build and push the Backend image
-      - name: Build and push Backend image
-        run: |
-          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/backend:latest -f backend/Dockerfile ./backend
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/backend:latest
+    # 4. Build and push frontend image to ACR
+    - name: Build and push frontend image
+      run: |
+        docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/frontend:latest ./frontend
+        docker push ${{ secrets.ACR_NAME }}.azurecr.io/frontend:latest  # Push the image to ACR
 
-      # 5. Build and push the Frontend image
-      - name: Build and push Frontend image
-        run: |
-          docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/frontend:latest -f frontend/Dockerfile ./frontend
-          docker push ${{ secrets.ACR_NAME }}.azurecr.io/frontend:latest
+    # 5. Build and push backend image to ACR
+    - name: Build and push backend image
+      run: |
+        docker build -t ${{ secrets.ACR_NAME }}.azurecr.io/backend:latest ./backend
+        docker push ${{ secrets.ACR_NAME }}.azurecr.io/backend:latest  # Push the image to ACR
 
-      # 6. Deploy to Azure App Service with the new images
-      - name: Deploy to Azure App Service
-        run: |
-          az webapp config container set --name ${{ secrets.APP_NAME }} \
-            --resource-group ${{ secrets.RESOURCE_GROUP }} \
-            --multicontainer-config-file docker-compose-azure.yml \
-            --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io \
-            --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
-            --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}
+    # 6. Deploy the containers using Docker Compose to Azure App Service
+    - name: Deploy to Azure App Service with Docker Compose
+      run: |
+        az webapp config container set \
+          --name ${{ secrets.APP_NAME }} \
+          --resource-group ${{ secrets.RESOURCE_GROUP }} \
+          --multicontainer-config-type compose \
+          --multicontainer-config-file docker-compose-azure.yml \
+          --docker-registry-server-url https://${{ secrets.ACR_NAME }}.azurecr.io \
+          --docker-registry-server-user ${{ secrets.ACR_USERNAME }} \
+          --docker-registry-server-password ${{ secrets.ACR_PASSWORD }}  # Use the registry credentials from secrets
