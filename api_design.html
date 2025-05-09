@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Design Justification</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1, h2 { color: #333; }
+        img { max-width: 100%; height: auto; }
+    </style>
+</head>
+<body>
+    <h1>API Design Justification</h1>
+    <p>This API was designed to provide a scalable, secure, and efficient interface for managing cloud-based resources. The design adheres to RESTful principles to ensure simplicity and compatibility with modern web standards.</p>
+    
+    <h2>Design Principles</h2>
+    <ul>
+        <li><strong>Scalability:</strong> The API is designed to handle increasing loads by leveraging stateless operations and horizontal scaling.</li>
+        <li><strong>Security:</strong> Authentication and authorization are implemented using OAuth 2.0 to protect sensitive data.</li>
+        <li><strong>Modularity:</strong> Each endpoint is designed to handle a specific resource, ensuring clear separation of concerns.</li>
+    </ul>
+    
+    <h2>Endpoints</h2>
+    <ul>
+        <li><strong>GET /api/resources</strong>: Fetches a list of resources.</li>
+        <li><strong>POST /api/resources</strong>: Creates a new resource.</li>
+        <li><strong>PUT /api/resources/{id}</strong>: Updates an existing resource.</li>
+        <li><strong>DELETE /api/resources/{id}</strong>: Deletes a resource.</li>
+    </ul>
+    
+    <h2>Architecture Diagram</h2>
+    <p>The following diagram illustrates the architecture of the system:</p>
+    <img src="static/images/architecture-diagram.png" alt="Architecture Diagram">
+</body>
+</html>
