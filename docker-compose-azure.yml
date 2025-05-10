@@ -2,11 +2,15 @@ version: '3.9'
 
 services:
   frontend:
-    image: ronitacr20354.azurecr.io/frontend:latest
+    build:
+      context: ./frontend  # Path to your frontend Dockerfile
+    image: cloudev.azurecr.io/frontend:latest  # Your frontend image from ACR
     ports:
-      - "3000:80"
+      - "80:80"  # Expose port 80 externally (frontend entrypoint)
 
   backend:
-    image: ronitacr20354.azurecr.io/backend:latest
+    build:
+      context: ./backend  # Path to your backend Dockerfile
+    image: cloudev.azurecr.io/backend:latest  # Your backend image from ACR
     ports:
-      - "8000:8000"
+      - "8000:8000"  # Expose port 8000 for backend service
